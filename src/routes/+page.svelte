@@ -49,7 +49,7 @@
   import * as d from '$lib/draw.js';
 
   let canvas;
-  let gridSize = 50;
+  let gridSize = 150;
 
   const localToGlobal = ([q, r], scale) => {
     const w = 3940;
@@ -87,6 +87,21 @@
         d.style(ctx, 'pink');
         g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
       });
+
+      // try coloring some triangles
+      const ti = 0;
+
+      d.style(ctx, 'white', 'teal', 2);
+      g.triNeighbors([0,0], ti).forEach(t => {
+        const [x,y] = localToGlobal(t[0], gridSize);
+        const pts = g.hexTri(g.hex(x, y, gridSize), t[1]);
+        d.drawPts(ctx, pts);
+      })
+
+      d.style(ctx, 'white', 'brown', 2);
+      const [x,y] = localToGlobal([0,0], gridSize);
+      const pts = g.hexTri(g.hex(x, y, gridSize), ti);
+      d.drawPts(ctx, pts);
     }
   }
 </script>

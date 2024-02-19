@@ -23,12 +23,18 @@ export const tri = (x, y, s, a = -Math.PI / 2) => {
 export const trisFromHex = (pts) => {
   const cen = { x: pts[0].x, y: pts[0].y + (pts[3].y - pts[0].y) / 2 };
   return pts.map((pt, i) => {
-    return[
+    return [
       { ...pt },
       { ...cen },
       { ...pts[(i+1)%pts.length]},
     ]
   })
+}
+
+export const hexTri = (pts, idx) => {
+  // Could be more efficient, we'll see if it matters
+  console.log('wut', trisFromHex(pts), idx+1%6)
+  return trisFromHex(pts)[(idx+1)%6];
 }
 
 class HexGrid {
@@ -97,18 +103,29 @@ const hexDir = [
   [0, 1]
 ];
 
-const hexAdd = (q, r, [dq, dr]) => [q+dq, r+dr];
-const hexNeighbor = ([q, r], dir) => hexAdd(q, r, hexDir[dir]);
-const hexScale = ([q, r], factor) => [q*factor, r*factor];
+export const hexAdd = (q, r, [dq, dr]) => [q+dq, r+dr];
+export const hexNeighbor = ([q, r], dir) => hexAdd(q, r, hexDir[dir]);
+export const hexScale = ([q, r], factor) => [q*factor, r*factor];
+
+export const triNeighbors = ([q, r], t) => {
+  // Two neighbors are in the hex, one is outside
+  return [
+    // Clockwise
+    [[q,r], (t+1)%6],
+    // Counter-clockwise
+    [[q,r], t-1 === -1 ? 5 : t-1],
+    // Neighbor hex + reflect
+    [hexNeighbor([q,r], 3-t < 0 ? 6+3-t : 3-t), (t+3)%6],
+  ];
+}
 
 // Given a width, a height, and a hex size, return a hash of axial coordinates
 export const hexGrid = (w, h, s) => {
   // Calculate ring size 
   const rings = Math.floor(Math.min(w, h) / 2 / (s*1.5));
 
+  // Hash map of coordinates
   const grid = new HexGrid();
-
-  //  1,0 1,-1 0,-1 -1,0 -1,1 0,1
 
   for (let i = 0; i < rings; i++) {
     if (i === 0) {
