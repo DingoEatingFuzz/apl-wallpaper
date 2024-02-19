@@ -113,7 +113,7 @@ export const triNeighbors = ([q, r], t) => {
     [[q,r], (t+1)%6],
     // Counter-clockwise
     [[q,r], t-1 === -1 ? 5 : t-1],
-    // Neighbor hex + reflect
+    // Neighbor hex + reflect (also hexes and tris have different winding orders, rip)
     [hexNeighbor([q,r], 3-t < 0 ? 6+3-t : 3-t), (t+3)%6],
   ];
 }

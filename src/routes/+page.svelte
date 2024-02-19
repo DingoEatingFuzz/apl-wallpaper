@@ -18,7 +18,11 @@
 
 <style>
   main, canvas {
-    width: 100%;
+    max-width: 100%;
+  }
+
+  canvas {
+    max-height: 100%;
   }
   
   main {
