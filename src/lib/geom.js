@@ -33,7 +33,6 @@ export const trisFromHex = (pts) => {
 
 export const hexTri = (pts, idx) => {
   // Could be more efficient, we'll see if it matters
-  console.log('wut', trisFromHex(pts), idx+1%6)
   return trisFromHex(pts)[(idx+1)%6];
 }
 
@@ -117,6 +116,35 @@ export const triNeighbors = ([q, r], t) => {
     // Neighbor hex + reflect
     [hexNeighbor([q,r], 3-t < 0 ? 6+3-t : 3-t), (t+3)%6],
   ];
+}
+
+export const triHexes = ([q, r], t) => {
+  // A triangle has three hexagones, rotating clockwise from each side
+  // Yeah, I don't know what I was thinking, but it works.
+  // 0 -> 0 -> 0 -> 0 -> 0 -> 0
+  // 1 -> 2 -> 1 -> 2 -> 1 -> 2
+  // 2 -> 1 -> 2 -> 1 -> 2 -> 1
+  return [
+    [ [[q,r], t], ...[0,0,0,0,0].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]) ],
+    [ [[q,r], t], ...[1,2,1,2,1].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]) ],
+    [ [[q,r], t], ...[2,1,2,1,2].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]) ],
+  ]
+}
+
+const triEq = (a, b) => {
+  return a[0][0] === b[0][0] && a[0][1] === b[0][1] && a[1] === b[1];
+}
+
+export const triHalves = ([q,r], t) => {
+  const neighbors = triNeighbors([q,r], t);
+  console.log('neigh', neighbors);
+  return neighbors.map(n => {
+    const [a, b] = triNeighbors(...n).filter(tri => !triEq(tri, [[q,r], t]));
+    return [
+      [ [[q,r], t], n, a ],
+      [ [[q,r], t], n, b ],
+    ]
+  }).flat();
 }
 
 // Given a width, a height, and a hex size, return a hash of axial coordinates

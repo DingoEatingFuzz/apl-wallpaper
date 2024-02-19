@@ -49,7 +49,7 @@
   import * as d from '$lib/draw.js';
 
   let canvas;
-  let gridSize = 150;
+  let gridSize = 50;
 
   const localToGlobal = ([q, r], scale) => {
     const w = 3940;
@@ -91,17 +91,40 @@
       // try coloring some triangles
       const ti = 0;
 
-      d.style(ctx, 'white', 'teal', 2);
-      g.triNeighbors([0,0], ti).forEach(t => {
-        const [x,y] = localToGlobal(t[0], gridSize);
-        const pts = g.hexTri(g.hex(x, y, gridSize), t[1]);
-        d.drawPts(ctx, pts);
-      })
+      // d.style(ctx, 'white', 'teal', 2);
+      // g.triNeighbors([0,0], ti).forEach(t => {
+      //   const [x,y] = localToGlobal(t[0], gridSize);
+      //   const pts = g.hexTri(g.hex(x, y, gridSize), t[1]);
+      //   d.drawPts(ctx, pts);
+      // })
 
-      d.style(ctx, 'white', 'brown', 2);
-      const [x,y] = localToGlobal([0,0], gridSize);
-      const pts = g.hexTri(g.hex(x, y, gridSize), ti);
-      d.drawPts(ctx, pts);
+      // d.style(ctx, 'white', 'brown', 2);
+      // const [x,y] = localToGlobal([0,0], gridSize);
+      // const pts = g.hexTri(g.hex(x, y, gridSize), ti);
+      // d.drawPts(ctx, pts);
+
+      const hexes = g.triHexes([0,0], ti);
+      const colors = ['rgba(255,0,0,0.4)', 'rgba(0,255,0,0.4)', 'rgba(0,0,255,0.4)'];
+      hexes.forEach((h, i) => {
+        d.style(ctx, 'white', colors[i], 2);
+        h.forEach(([hex, t]) => {
+          const [x,y] = localToGlobal(hex, gridSize);
+          const pts = g.hexTri(g.hex(x, y, gridSize), t);
+          d.drawPts(ctx, pts);
+        })
+      });
+
+      const halves = g.triHalves([2,0], ti);
+      const hcolors = ['pink', 'orange', 'purple', 'cyan', 'green', 'maroon'];
+      halves.slice(0,6).forEach((h, i) => {
+        d.style(ctx, 'white', hcolors[i], 2);
+        console.log('haytch', h);
+        h.forEach(([hex, t]) => {
+          const [x,y] = localToGlobal(hex, gridSize);
+          const pts = g.hexTri(g.hex(x, y, gridSize), t);
+          d.drawPts(ctx, pts);
+        });
+      })
     }
   }
 </script>
