@@ -45,43 +45,48 @@
 </style>
 
 <script>
-  // There are two grids:
-  // 1. Hexagons, defines the overall structure
-  // 2. Triangles, six within each hexagon, defines shape placement
+  import * as g from '$lib/geom.js';
+  import * as d from '$lib/draw.js';
 
   let canvas;
+  let gridSize = 50;
 
-  const hex = (x, y, s) => {
-    // Derive points from s. Apply translation with x, y
-    const points = [];
-    for (let i = 0; i < 6; i++) {
-      const ang = (2 * Math.PI / 6) * i - Math.PI / 2;
-      points.push({ x: Math.cos(ang) * s, y: Math.sin(ang) * s });
-    }
-    return points.map(p => ({ x: p.x + x, y: p.y + y  }));
-  }
+  const localToGlobal = ([q, r], scale) => {
+    const w = 3940;
+    const h = 2160;
+    const s = -q-r;
 
-  const drawPts = (ctx, pts, fill = true, stroke = true) => {
-    console.log('pts', pts);
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
-      ctx.lineTo(pts[i].x, pts[i].y);
-    }
-    if (fill) ctx.fill();
-    if (stroke) ctx.stroke();
+    // These are used for rendering the grid, not necessary here?
+    const hs = Math.sqrt(3) * scale;
+    const vs = 3 / 2 * scale;
+    let x = w/2
+    let y = h/2;
+
+    // q, r, and s represent magnitude vectors, hs and vs represent the x and y components
+    x += s * hs/2 + q * -hs/2;
+    y += s * vs + q * vs;
+
+    return [x, y];
   }
 
   $: {
     const ctx = canvas?.getContext('2d', { colorSpace: 'display-p3' });
-    console.log('check?', ctx);
 
     if (ctx) {
       ctx.fillStyle="#333344";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'white';
-      ctx.strokeStyle = 'red';
-      drawPts(ctx, hex(100, 100, 20));
+
+      const grid = g.hexGrid(3940, 2160, gridSize);
+      grid.allCoords().forEach(hex => {
+        const [x, y] = localToGlobal(hex, gridSize);
+        const h = g.hex(x, y, gridSize);
+
+        d.style(ctx, 'red', 'rgba(255,255,255,0.1)', 3);
+        d.drawPts(ctx, h);
+
+        d.style(ctx, 'pink');
+        g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
+      });
     }
   }
 </script>
