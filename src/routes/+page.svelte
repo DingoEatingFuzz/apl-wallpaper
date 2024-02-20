@@ -56,7 +56,7 @@
   let gridSize = 50;
 
   const localToGlobal = ([q, r], scale) => {
-    const w = 3940;
+    const w = 3840;
     const h = 2160;
     const s = -q-r;
 
@@ -134,7 +134,7 @@
 </script>
 
 <main>
-  <canvas bind:this={canvas} width="3940" height="2160"></canvas>
+  <canvas bind:this={canvas} width="3840" height="2160"></canvas>
 </main>
 <aside>
   <h1>Applications Product Line</h1>
