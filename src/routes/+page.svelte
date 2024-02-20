@@ -87,53 +87,112 @@
 
       const grid = g.hexGrid(3940, 2160, gridSize);
       grid.allCoords().forEach(hex => {
-        const [x, y] = localToGlobal(hex, gridSize);
+        const [x, y] = d.localToGlobal(hex, gridSize);
         const h = g.hex(x, y, gridSize);
 
-        d.style(ctx, 'red', 'rgba(255,255,255,0.1)', 3);
+        d.style(ctx, 'steelgray', 'transparent', 0);
         d.drawPts(ctx, h);
 
-        d.style(ctx, 'pink');
+        d.style(ctx, 'gray', 'transparent', 0);
         g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
       });
 
-      // try coloring some triangles
-      const ti = 0;
+      const colVagrant = '#2E71E5';
+      const colNomad = '#60DEA9';
+      const colWaypoint = '#62D4DC';
 
-      // d.style(ctx, 'white', 'teal', 2);
-      // g.triNeighbors([0,0], ti).forEach(t => {
-      //   const [x,y] = localToGlobal(t[0], gridSize);
-      //   const pts = g.hexTri(g.hex(x, y, gridSize), t[1]);
-      //   d.drawPts(ctx, pts);
-      // })
+      // Try filling out the grid with nomads and waypoints and vagrants
+      const nomads = 100;
+      const waypoints = 300;
+      const vagrants = 900;
 
-      // d.style(ctx, 'white', 'brown', 2);
-      // const [x,y] = localToGlobal([0,0], gridSize);
-      // const pts = g.hexTri(g.hex(x, y, gridSize), ti);
-      // d.drawPts(ctx, pts);
+      const hexIds = grid.allCoords();
 
-      const hexes = g.triHexes([0,0], ti);
-      const colors = ['rgba(255,0,0,0.4)', 'rgba(0,255,0,0.4)', 'rgba(0,0,255,0.4)'];
-      hexes.forEach((h, i) => {
-        d.style(ctx, 'white', colors[i], 2);
-        h.forEach(([hex, t]) => {
-          const [x,y] = localToGlobal(hex, gridSize);
-          const pts = g.hexTri(g.hex(x, y, gridSize), t);
-          d.drawPts(ctx, pts);
-        })
-      });
+      for (let i = 0; i < nomads; i++) {
+        let hexLoc = hexIds[Math.floor(Math.random() * hexIds.length)];
+        let triLoc = Math.floor(Math.random() * 6);
+        let hex;
 
-      const halves = g.triHalves([2,0], ti);
-      const hcolors = ['pink', 'orange', 'purple', 'cyan', 'green', 'maroon'];
-      halves.slice(0,6).forEach((h, i) => {
-        d.style(ctx, 'white', hcolors[i], 2);
-        console.log('haytch', h);
-        h.forEach(([hex, t]) => {
-          const [x,y] = localToGlobal(hex, gridSize);
-          const pts = g.hexTri(g.hex(x, y, gridSize), t);
-          d.drawPts(ctx, pts);
-        });
-      })
+        let retries = 20;
+        let bail = true;
+
+        for (let j = 0; j < retries; j++) {
+          const hexes = shuffle(g.triHexes(hexLoc, triLoc));
+          hex = hexes.find(h => validate(grid, h));
+          if (hex) {
+            // Populate the grid
+            hex.forEach(t => {
+              grid.at(t[0][0], t[0][1]).put(t[1]);
+            })
+            bail = false;
+            break;
+          }
+          hexLoc = hexIds[Math.floor(Math.random() * hexIds.length)];
+          triLoc = Math.floor(Math.random() * 6);
+        }
+
+        if (bail) break;
+
+        d.style(ctx, 'white', colNomad, 0);
+        d.drawShape(ctx, gridSize, hex);
+      }
+
+      for (let i = 0; i < waypoints; i++) {
+        let hexLoc = hexIds[Math.floor(Math.random() * hexIds.length)];
+        let triLoc = Math.floor(Math.random() * 6);
+        let half;
+
+        let retries = 20;
+        let bail = true;
+
+        for (let j = 0; j < retries; j++) {
+          const halves = shuffle(g.triHalves(hexLoc, triLoc));
+          half = halves.find(h => validate(grid, h));
+          if (half) {
+            // Populate the grid
+            half.forEach(t => {
+              grid.at(t[0][0], t[0][1]).put(t[1]);
+            })
+            bail = false;
+            break;
+          }
+          hexLoc = hexIds[Math.floor(Math.random() * hexIds.length)];
+          triLoc = Math.floor(Math.random() * 6);
+        }
+
+        if (bail) break;
+
+        d.style(ctx, 'white', colWaypoint, 0);
+        d.drawShape(ctx, gridSize, half);
+      }
+
+      for (let i = 0; i < vagrants; i++) {
+        let hexLoc = hexIds[Math.floor(Math.random() * hexIds.length)];
+        let triLoc = Math.floor(Math.random() * 6);
+
+        let tri;
+
+        let retries = 20;
+        let bail = true;
+
+        for (let j = 0; j < retries; j++) {
+          tri = [hexLoc, triLoc];
+          if (validate(grid, [tri])) {
+            // Populate the grid
+            grid.at(tri[0][0], tri[0][1]).put(tri[1]);
+            bail = false;
+            break;
+          }
+          hexLoc = hexIds[Math.floor(Math.random() * hexIds.length)];
+          triLoc = Math.floor(Math.random() * 6);
+        }
+
+        if (bail) break;
+
+        d.style(ctx, 'white', colVagrant, 0);
+        console.log(tri);
+        d.drawShape(ctx, gridSize, [tri]);
+      }
     }
   }
 </script>
