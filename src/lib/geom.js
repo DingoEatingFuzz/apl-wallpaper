@@ -137,7 +137,6 @@ const triEq = (a, b) => {
 
 export const triHalves = ([q,r], t) => {
   const neighbors = triNeighbors([q,r], t);
-  console.log('neigh', neighbors);
   return neighbors.map(n => {
     const [a, b] = triNeighbors(...n).filter(tri => !triEq(tri, [[q,r], t]));
     return [

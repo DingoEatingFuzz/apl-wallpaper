@@ -55,22 +55,27 @@
   let canvas;
   let gridSize = 50;
 
-  const localToGlobal = ([q, r], scale) => {
-    const w = 3840;
-    const h = 2160;
-    const s = -q-r;
+  // In-place shuffle
+  const shuffle = (arr) => {
+    let len = arr.length;
+    while (len) {
+      len--;
+      const idx = Math.floor(Math.random() * len);
 
-    // These are used for rendering the grid, not necessary here?
-    const hs = Math.sqrt(3) * scale;
-    const vs = 3 / 2 * scale;
-    let x = w/2
-    let y = h/2;
+      const dest = arr[len];
+      arr[len] = arr[idx];
+      arr[idx] = dest;
+    }
+    return arr;
+  }
 
-    // q, r, and s represent magnitude vectors, hs and vs represent the x and y components
-    x += s * hs/2 + q * -hs/2;
-    y += s * vs + q * vs;
-
-    return [x, y];
+  const validate = (grid, tris) => {
+    for (let tri of tris) {
+      const [[q, r], t] = tri;
+      console.log('Tri?', tri, grid.at(q, r), grid.at(q, r)?.at(t));
+      if (!grid.at(q, r) || grid.at(q, r).at(t)) return false;
+    }
+    return true;
   }
 
   $: {
