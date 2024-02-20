@@ -71,7 +71,7 @@ class HexGrid {
   }
 
   allCoords() {
-    return Object.keys(this.grid).map(k => k.split(','));
+    return Object.keys(this.grid).map(k => k.split(',').map(v => parseInt(v, 10)));
   }
 }
 
