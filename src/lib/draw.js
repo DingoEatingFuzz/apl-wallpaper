@@ -17,9 +17,7 @@ export const style = (ctx, stroke = 'black', fill = 'transparent', width = 1) =>
   ctx.fillStyle = fill;
 }
 
-export const localToGlobal = ([q, r], scale) => {
-  const w = 3840;
-  const h = 2160;
+const localToGlobal = (w, h, [q, r], scale) => {
   const s = -q-r;
 
   // These are used for rendering the grid, not necessary here?
@@ -34,6 +32,8 @@ export const localToGlobal = ([q, r], scale) => {
 
   return [x, y];
 }
+
+export const localToGlobalator = (w, h) => (hex, scale) => localToGlobal(w, h, hex, scale);
 
 const det3 = (l, m, r) => (m.x - l.x) * (r.y - l.y) - (r.x - l.x) * (m.y - l.y);
 
@@ -79,9 +79,9 @@ const hull = (pts) => {
   return [...upperHull(pts), ...lowerHull(pts)];
 }
 
-export const drawShape = (ctx, scale, shapes) => {
+export const drawShape = (ctx, ltg, scale, shapes) => {
   const pts = shapes.map(([h, t]) => {
-    const [x,y] = localToGlobal(h, scale);
+    const [x,y] = ltg(h, scale);
     return hexTri(hex(x, y, scale), t);
   })
   drawPts(ctx, hull(pts.flat()));

@@ -9,9 +9,9 @@
       margin: 0;
       height: 100vh;
       width: 100%;
-      background: oklch(0.15 0.03 225.59);
+      background: oklch(0.35 0.03 225.59);
       font-family: sans-serif;
-      color: oklch(0.75 0.03 225.59 / 1);
+      color: oklch(0.95 0.03 225.59 / 1);
     }
   </style>
 </svelte:head>
@@ -40,27 +40,80 @@
     padding: 20px;
     border: 1px solid oklch(0.45 0.03 225.59 / 1);
     width: 300px;
+    line-height: 1.5;
   }
 
   h1 {
     color: white;
     margin-top: 0;
   }
+
+  .tri-align {
+    margin-bottom: 1em;
+  }
+
+  button {
+    margin-top: 1em;
+  }
+
+  .tri-align .label {
+    display: flex;
+    justify-content: space-around;
+    color: oklch(0.75 0.03 225.59 / 1);
+  }
+
+  .inputs div {
+    display: flex;
+    justify-content: center;
+  }
 </style>
 
 <script>
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
 
   import * as g from '$lib/geom.js';
   import * as d from '$lib/draw.js';
 
   let canvas;
-  let gridSize = 100;
-  let showHexGrid = false;
-  let showTriGrid = false;
+  let gridSize = 50;
+  let showHexGrid = true;
+  let showTriGrid = true;
+  let isUltrawide = false;
+  let transparentBg = false;
+
+  // 5120 x 2160
+  // 3840 x 2160
+
+  let cWidth = isUltrawide ? 5120 : 3840;
+  let cHeight = 2160;
+
+  let mixReso = 7;
+  $: mixes = Array(mixReso).fill(null).map((_, row) => {
+    let v = mixReso - row - 1;
+    return Array(row + 1).fill(null).map((_, col) => {
+      let n = row - col;
+      let w = col;
+      let sum = v + n + w;
+      console.log(v, n, w, v + n + w);
+      return [n, v, w].map(p => Math.round((p / sum) * 100)).join('-');
+    });
+  });
+
+  let mix = '33-33-33';
+  let goalPct = 5;
+  $: nomadPct = parseInt(mix.split('-')[0], 10);
+  $: vagrantPct = parseInt(mix.split('-')[1], 10);
+  $: waypointPct = parseInt(mix.split('-')[2], 10);
 
   let img = new Image();
   let ready = false;
+
+  async function setUltrawide(ev) {
+    // Unfortunately we must wait for the html element to repaint to have proper dimensions in reactive handler
+    cWidth = ev.target.checked ? 5120 : 3840;
+    await tick();
+    isUltrawide = ev.target.checked;
+  }
 
   onMount(() => {
     img.onload = () => {
@@ -92,27 +145,35 @@
   }
 
   $: {
+    let ultra = isUltrawide;
     const ctx = canvas?.getContext('2d', { colorSpace: 'display-p3' });
 
     if (ctx && ready) {
+      console.log('Ready?', ctx, ready, ultra, canvas.width, canvas.height);
+      let localToGlobal = d.localToGlobalator(canvas.width, canvas.height);
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, canvas.width / 2 - canvas.height / 2, 0, canvas.height, canvas.height);
       const dimg = ctx.getImageData(canvas.width / 2 - canvas.height / 2, 0, canvas.height, canvas.height);
 
-      ctx.fillStyle="#0d0e12";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (transparentBg) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle="#0d0e12";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       // Make a big ol' hexagon shaped hex grid
-      const grid = g.hexGrid(3940, 2160, gridSize);
+      const grid = g.hexGrid(canvas.width, canvas.height, gridSize);
 
       // Drop hexagons outside of the logo
       // Get the color of the texture pixel proportionally under the target point
       // Just the red channel, since the texture is white on transparent.
+      const xoff = Math.floor(canvas.width / 2 - dimg.width / 2);
+      console.log('Wat', isUltrawide, canvas.width, dimg.width, xoff);
       grid.allCoords().forEach((hex) => {
-        const [x, y] = d.localToGlobal(hex, gridSize).map(v => Math.round(v));
-        const xoff = Math.floor(canvas.width / 2 - dimg.width / 2);
+        const [x, y] = localToGlobal(hex, gridSize).map(v => Math.round(v));
         let color = dimg.data[(y * dimg.width + x - xoff) * 4];
-        console.log(y, xoff, x - xoff, y * dimg.width + x - xoff, color);
         if (color !== 255) grid.rm(...hex);
       });
 
@@ -123,14 +184,11 @@
 
       // Try filling out the grid with nomads and waypoints and vagrants
       const totalTris = grid.allCoords().length * 6;
-      const goalPct = 0.75
-      const nomadPct = 0.33;
-      const waypointPct = 0.33;
-      const vagrantPct = 0.33;
 
-      const nomads = Math.round(totalTris * goalPct * nomadPct / 6);
-      const waypoints = Math.round(totalTris * goalPct * waypointPct / 3);
-      const vagrants = Math.round(totalTris * goalPct * vagrantPct);
+      const goal = goalPct / 100;
+      const nomads = Math.round(totalTris * goal * nomadPct / 100 / 6);
+      const waypoints = Math.round(totalTris * goal * waypointPct / 100 / 3);
+      const vagrants = Math.round(totalTris * goal * vagrantPct / 100);
 
       const hexIds = grid.allCoords();
 
@@ -160,7 +218,7 @@
         if (bail) break;
 
         d.style(ctx, 'transparent', colNomad, 2);
-        d.drawShape(ctx, gridSize, hex);
+        d.drawShape(ctx, localToGlobal, gridSize, hex);
       }
 
       for (let i = 0; i < waypoints; i++) {
@@ -189,7 +247,7 @@
         if (bail) break;
 
         d.style(ctx, 'transparent', colWaypoint, 2);
-        d.drawShape(ctx, gridSize, half);
+        d.drawShape(ctx, localToGlobal, gridSize, half);
       }
 
       for (let i = 0; i < vagrants; i++) {
@@ -216,21 +274,21 @@
         if (bail) break;
 
         d.style(ctx, 'transparent', colVagrant, 2);
-        d.drawShape(ctx, gridSize, [tri]);
+        d.drawShape(ctx, localToGlobal, gridSize, [tri]);
       }
 
       if (showHexGrid || showTriGrid) {
         grid.allCoords().forEach(hex => {
-          const [x, y] = d.localToGlobal(hex, gridSize);
+          const [x, y] = localToGlobal(hex, gridSize);
           const h = g.hex(x, y, gridSize);
 
           if (showHexGrid) {
-            d.style(ctx, 'rgba(255, 255, 255, 0.3)', 'transparent', 3);
+            d.style(ctx, 'oklch(0.8, 0.05, 225.59)', 'transparent', 3);
             d.drawPts(ctx, h);
           }
 
           if (showTriGrid) {
-            d.style(ctx, 'steelgrey', 'transparent', 1);
+            d.style(ctx, 'oklch(0.7, 0.05, 225.59)', 'transparent', 1);
             g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
           }
         });
@@ -240,22 +298,53 @@
 </script>
 
 <main>
-  <canvas bind:this={canvas} width="3840" height="2160"></canvas>
+  <canvas bind:this={canvas} width={cWidth} height={cHeight}></canvas>
 </main>
 <aside>
-  <h1>Applications Product Line</h1>
+  <h1>Applications Products</h1>
   <p>Play with sliders to your liking and export your own 5k wallpaper.</p>
   <form>
-    <ul>
-      <li>% filled</li>
-      <li>Hex size</li>
-      <li>Vagrant</li>
-      <li>Nomad</li>
-      <li>Waypoint</li>
-      <li>Color variation</li>
-      <li>Scale</li>
-      <li>Ultrawide?</li>
-    </ul>
+      <label>
+        % filled
+        <div><input type="range" min="0" max="100" step="1" bind:value={goalPct} /> {goalPct}%</div>
+      </label>
+      <label>
+        Hex size
+        <div><input type="range" min="10" max="100" step="1" bind:value={gridSize} /> {gridSize}</div>
+      </label>
+      <label>
+        Extended hex sizes
+        <div><input type="range" min="100" max="400" step="1" bind:value={gridSize} /> {gridSize}</div>
+      </label>
+      <div class='tri-align'>
+        <p>Product alignment</p>
+        <div class='label'><span>Vagrant</span></div>
+        <div class='inputs'>
+          {#each mixes as row}
+            <div>
+              {#each row as m}
+                <input type='radio' bind:group={mix} value={m} />
+              {/each}
+            </div>
+          {/each}
+        </div>
+        <div class='label'>
+          <span>Nomad</span>
+          <span>Waypoint</span>
+        </div>
+      </div>
+      <label>
+        <div><input type="checkbox" bind:checked={showHexGrid} /> Show hex grid</div>
+      </label>
+      <label>
+        <div><input type="checkbox" bind:checked={showTriGrid} /> Show triangle grid</div>
+      </label>
+      <label>
+        <div><input type="checkbox" on:input={setUltrawide} /> Ultrawide</div>
+      </label>
+      <label>
+        <div><input type="checkbox" bind:checked={transparentBg} /> Transparent BG</div>
+      </label>
     <button>Save Image</button>
   </form>
 </aside>
