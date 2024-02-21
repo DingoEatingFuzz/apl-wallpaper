@@ -53,7 +53,9 @@
   import * as d from '$lib/draw.js';
 
   let canvas;
-  let gridSize = 150;
+  let gridSize = 50;
+  let showHexGrid = true;
+  let showTriGrid = true;
 
   // In-place shuffle
   const shuffle = (arr) => {
@@ -86,25 +88,15 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const grid = g.hexGrid(3940, 2160, gridSize);
-      // grid.allCoords().forEach(hex => {
-      //   const [x, y] = d.localToGlobal(hex, gridSize);
-      //   const h = g.hex(x, y, gridSize);
-
-      //   d.style(ctx, 'steelgray', 'transparent', 0);
-      //   d.drawPts(ctx, h);
-
-      //   d.style(ctx, 'gray', 'transparent', 0);
-      //   g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
-      // });
 
       const colVagrant = '#2E71E5';
       const colNomad = '#60DEA9';
       const colWaypoint = '#62D4DC';
 
       // Try filling out the grid with nomads and waypoints and vagrants
-      const nomads = 1;
-      const waypoints = 0;
-      const vagrants = 0;
+      const nomads = 100;
+      const waypoints = 300;
+      const vagrants = 600;
 
       const hexIds = grid.allCoords();
 
@@ -133,7 +125,7 @@
 
         if (bail) break;
 
-        d.style(ctx, 'white', colNomad, 0);
+        d.style(ctx, 'transparent', colNomad, 2);
         d.drawShape(ctx, gridSize, hex);
       }
 
@@ -162,8 +154,8 @@
 
         if (bail) break;
 
-        d.style(ctx, 'white', colWaypoint, 0);
-        //d.drawShape(ctx, gridSize, half);
+        d.style(ctx, 'transparent', colWaypoint, 2);
+        d.drawShape(ctx, gridSize, half);
       }
 
       for (let i = 0; i < vagrants; i++) {
@@ -189,8 +181,25 @@
 
         if (bail) break;
 
-        d.style(ctx, 'white', colVagrant, 0);
-        //d.drawShape(ctx, gridSize, [tri]);
+        d.style(ctx, 'transparent', colVagrant, 2);
+        d.drawShape(ctx, gridSize, [tri]);
+      }
+
+      if (showHexGrid || showTriGrid) {
+        grid.allCoords().forEach(hex => {
+          const [x, y] = d.localToGlobal(hex, gridSize);
+          const h = g.hex(x, y, gridSize);
+
+          if (showHexGrid) {
+            d.style(ctx, 'rgba(255, 255, 255, 0.3)', 'transparent', 3);
+            d.drawPts(ctx, h);
+          }
+
+          if (showTriGrid) {
+            d.style(ctx, 'steelgrey', 'transparent', 1);
+            g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
+          }
+        });
       }
     }
   }

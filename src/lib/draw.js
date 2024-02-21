@@ -1,14 +1,6 @@
 import { hexTri, hex } from '$lib/geom';
 
 export const drawPts = (ctx, pts, fill = true, stroke = true) => {
-  console.log('wat', pts.length);
-  ctx.font = "42px sans-serif";
-  pts.forEach((p,i) => {
-    //ctx.beginPath();
-    //ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
-    //ctx.fill();
-    ctx.fillText(i, p.x, p.y);
-  });
   ctx.beginPath();
   ctx.moveTo(pts[0].x, pts[0].y);
   for (let i = 1; i < pts.length; i++) {
@@ -43,107 +35,48 @@ export const localToGlobal = ([q, r], scale) => {
   return [x, y];
 }
 
-const lrBounds = (pts) => {
-  const left = pts.reduce((c, pt) => {
-    let ret = pt.x < c.x ? pt : c
-    if (pt.x === c.x) ret = pt.y < c.y ? pt : c;
-    return ret;
-  }, pts[0]);
+const det3 = (l, m, r) => (m.x - l.x) * (r.y - l.y) - (r.x - l.x) * (m.y - l.y);
 
-  const right = pts.reduce((c, pt) => {
-    let ret = pt.x > c.x ? pt : c
-    if (pt.x === c.x) ret = pt.y > c.y ? pt : c;
-    return ret;
-  }, pts[0]);
+const upperHull = (pts) => {
+  const up = [];
 
-  return [left, right];
-}
-
-// const lineDist = (pt, [a, b]) => {
-//   let dy = b.y - a.y;
-//   let dx = a.x - b.x;
-//   return dx * (pt.y - a.y) + dy * (pt.x - a.x);
-// }
-
-// const lineDist = (pt, [a, b]) => {
-//   return (a.x - pt.x) * (b.y - pt.y) - (b.x - pt.x) * (a.y - pt.y);
-// }
-
-// let d = (line.pt1.x - pt.x) * (line.pt2.y - pt.y) - (line.pt2.x - pt.x) * (line.pt1.y - pt.y)
-
-const dist2 = (v, w) => {
-  if (v.x === w.x && v.y === w.y) return 0;
-  return Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
-}
-
-const distToSegment = (p, v, w) => {
-  var l2 = dist2(v, w);
-
-  if (l2 == 0) {
-    return dist2(p, v);
+  // While we're "going right"
+  for (let pt of pts) {
+    while (up.length >= 2 && det3(up[up.length - 2], up[up.length - 1], pt) <= 0) {
+      up.pop();
+    }
+    up.push(pt);
   }
 
-  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-
-  t = Math.max(0, Math.min(1, t));
-
-  return dist2(p, {
-    x: v.x + t * (w.x - v.x),
-    y: v.y + t * (w.y - v.y)
-  });
+  return up;
 }
 
-function distancePointLine(pt, [a, b]) {
-  return distToSegment(pt, a, b)
-}
-
-const distPoints = ([a, b], pts) => {
-  let maxDist = 0;
-  let max;
-
-  const [up, down] = pts.reduce((agg, pt) => {
-    const d = distancePointLine(pt, [a, b]);
-    console.log('d', d);
-    if (d > 0) {
-      agg[0].push(d);
-      // Side-effect for one pass
-      if (d > maxDist) {
-        maxDist = d;
-        max = pt;
-      }
-    } else if (d < 0) {
-      agg[1].push(d);
+const lowerHull = (pts) => {
+  const b = pts.slice().reverse();
+  const low = [];
+  for (let pt of b) {
+    while (low.length >= 2 && det3(low[low.length - 2], low[low.length - 1], pt) <= 0) {
+      low.pop();
     }
-    return agg;
-  }, [[],[]]);
-
-  return [max, up, down];
+    low.push(pt);
+  }
+  low.shift();
+  return low;
 }
 
-const _hull = (h, [a, b], pts) => {
-  const [max, sub] = distPoints([a, b], pts);
-  if (!sub.length) return;
-
-
-  if (max) h.push(max);
-
-  _hull(h, [a, max], sub);
-  _hull(h, [max, b], sub);
-}
-
+// Graham scan https://observablehq.com/@timhau/convex-hull
 const hull = (pts) => {
   if (pts.length <= 3) return pts;
 
-  const [l, r] = lrBounds(pts);
-  const [,up, down] = distPoints([l, r], pts);
+  pts.sort((a, b) => {
+    if (a.x < b.x) return -1;
+    if (a.x === b.x) {
+      if (a.y < b.y) return -1;
+    }
+    return 1;
+  });
 
-  const h = [l];
-  _hull(h, [l, r], up);
-  h.push(r);
-  _hull(h, [r, l], down);
-
-  console.log('done', h);
-  return h;
+  return [...upperHull(pts), ...lowerHull(pts)];
 }
 
 export const drawShape = (ctx, scale, shapes) => {
