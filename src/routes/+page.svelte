@@ -53,13 +53,24 @@
   }
 
   button {
+    all: unset;
+    box-sizing: border-box;
     margin-top: 1em;
+    padding: 10px;
+    width: 100%;
+    display: block;
+    background: oklch(0.67 0.2 46.26);
+    text-align: center;
   }
 
   .tri-align .label {
     display: flex;
     justify-content: space-around;
     color: oklch(0.75 0.03 225.59 / 1);
+  }
+
+  input[type="range"] {
+    width: 200px;
   }
 
   .inputs div {
