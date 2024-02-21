@@ -100,7 +100,7 @@
   });
 
   let mix = '33-33-33';
-  let goalPct = 5;
+  let goalPct = 50;
   $: nomadPct = parseInt(mix.split('-')[0], 10);
   $: vagrantPct = parseInt(mix.split('-')[1], 10);
   $: waypointPct = parseInt(mix.split('-')[2], 10);
@@ -134,6 +134,14 @@
       arr[idx] = dest;
     }
     return arr;
+  }
+
+  function saveImage() {
+    const dataURL = canvas.toDataURL();
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'apl-wallpaper.png';
+    a.click();
   }
 
   const validate = (grid, tris) => {
@@ -345,6 +353,6 @@
       <label>
         <div><input type="checkbox" bind:checked={transparentBg} /> Transparent BG</div>
       </label>
-    <button>Save Image</button>
+    <button on:click={saveImage}>Save Image</button>
   </form>
 </aside>
