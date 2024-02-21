@@ -302,12 +302,15 @@
           const h = g.hex(x, y, gridSize);
 
           if (showHexGrid) {
-            d.style(ctx, 'oklch(0.8, 0.05, 225.59)', 'transparent', 3);
+            // Firefox doesn't support oklch in canvas yet
+            // oklch(0.8, 0.05, 225.59)
+            d.style(ctx, '#b1c1c8', 'transparent', 3);
             d.drawPts(ctx, h);
           }
 
           if (showTriGrid) {
-            d.style(ctx, 'oklch(0.7, 0.05, 225.59)', 'transparent', 1);
+            // oklch(0.7, 0.05, 225.59)
+            d.style(ctx, '#92a1a8', 'transparent', 1);
             g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
           }
         });
