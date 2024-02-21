@@ -49,13 +49,25 @@
 </style>
 
 <script>
+  import { onMount } from "svelte";
+
   import * as g from '$lib/geom.js';
   import * as d from '$lib/draw.js';
 
   let canvas;
-  let gridSize = 50;
-  let showHexGrid = true;
-  let showTriGrid = true;
+  let gridSize = 100;
+  let showHexGrid = false;
+  let showTriGrid = false;
+
+  let img = new Image();
+  let ready = false;
+
+  onMount(() => {
+    img.onload = () => {
+      ready = true;
+    };
+    img.src = "logo.png";
+  });
 
   // In-place shuffle
   const shuffle = (arr) => {
@@ -82,21 +94,43 @@
   $: {
     const ctx = canvas?.getContext('2d', { colorSpace: 'display-p3' });
 
-    if (ctx) {
+    if (ctx && ready) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle="#333344";
+      ctx.drawImage(img, canvas.width / 2 - canvas.height / 2, 0, canvas.height, canvas.height);
+      const dimg = ctx.getImageData(canvas.width / 2 - canvas.height / 2, 0, canvas.height, canvas.height);
+
+      ctx.fillStyle="#0d0e12";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Make a big ol' hexagon shaped hex grid
       const grid = g.hexGrid(3940, 2160, gridSize);
+
+      // Drop hexagons outside of the logo
+      // Get the color of the texture pixel proportionally under the target point
+      // Just the red channel, since the texture is white on transparent.
+      grid.allCoords().forEach((hex) => {
+        const [x, y] = d.localToGlobal(hex, gridSize).map(v => Math.round(v));
+        const xoff = Math.floor(canvas.width / 2 - dimg.width / 2);
+        let color = dimg.data[(y * dimg.width + x - xoff) * 4];
+        console.log(y, xoff, x - xoff, y * dimg.width + x - xoff, color);
+        if (color !== 255) grid.rm(...hex);
+      });
+
 
       const colVagrant = '#2E71E5';
       const colNomad = '#60DEA9';
       const colWaypoint = '#62D4DC';
 
       // Try filling out the grid with nomads and waypoints and vagrants
-      const nomads = 100;
-      const waypoints = 300;
-      const vagrants = 600;
+      const totalTris = grid.allCoords().length * 6;
+      const goalPct = 0.75
+      const nomadPct = 0.33;
+      const waypointPct = 0.33;
+      const vagrantPct = 0.33;
+
+      const nomads = Math.round(totalTris * goalPct * nomadPct / 6);
+      const waypoints = Math.round(totalTris * goalPct * waypointPct / 3);
+      const vagrants = Math.round(totalTris * goalPct * vagrantPct);
 
       const hexIds = grid.allCoords();
 
