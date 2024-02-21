@@ -125,9 +125,9 @@ export const triHexes = ([q, r], t) => {
   // 1 -> 2 -> 1 -> 2 -> 1 -> 2
   // 2 -> 1 -> 2 -> 1 -> 2 -> 1
   return [
-    [ [[q,r], t], ...[0,0,0,0,0].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]) ],
-    [ [[q,r], t], ...[1,2,1,2,1].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]) ],
-    [ [[q,r], t], ...[2,1,2,1,2].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]) ],
+    [0,0,0,0,0].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]),
+    [1,2,1,2,1].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]),
+    [2,1,2,1,2].reduce((p, n) => p.concat([triNeighbors(...p[p.length-1])[n]]), [[[q,r], t]]),
   ]
 }
 

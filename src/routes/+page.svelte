@@ -53,7 +53,7 @@
   import * as d from '$lib/draw.js';
 
   let canvas;
-  let gridSize = 50;
+  let gridSize = 150;
 
   // In-place shuffle
   const shuffle = (arr) => {
@@ -72,7 +72,6 @@
   const validate = (grid, tris) => {
     for (let tri of tris) {
       const [[q, r], t] = tri;
-      console.log('Tri?', tri, grid.at(q, r), grid.at(q, r)?.at(t));
       if (!grid.at(q, r) || grid.at(q, r).at(t)) return false;
     }
     return true;
@@ -82,29 +81,30 @@
     const ctx = canvas?.getContext('2d', { colorSpace: 'display-p3' });
 
     if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle="#333344";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const grid = g.hexGrid(3940, 2160, gridSize);
-      grid.allCoords().forEach(hex => {
-        const [x, y] = d.localToGlobal(hex, gridSize);
-        const h = g.hex(x, y, gridSize);
+      // grid.allCoords().forEach(hex => {
+      //   const [x, y] = d.localToGlobal(hex, gridSize);
+      //   const h = g.hex(x, y, gridSize);
 
-        d.style(ctx, 'steelgray', 'transparent', 0);
-        d.drawPts(ctx, h);
+      //   d.style(ctx, 'steelgray', 'transparent', 0);
+      //   d.drawPts(ctx, h);
 
-        d.style(ctx, 'gray', 'transparent', 0);
-        g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
-      });
+      //   d.style(ctx, 'gray', 'transparent', 0);
+      //   g.trisFromHex(h).forEach(t => d.drawPts(ctx, t));
+      // });
 
       const colVagrant = '#2E71E5';
       const colNomad = '#60DEA9';
       const colWaypoint = '#62D4DC';
 
       // Try filling out the grid with nomads and waypoints and vagrants
-      const nomads = 100;
-      const waypoints = 300;
-      const vagrants = 900;
+      const nomads = 1;
+      const waypoints = 0;
+      const vagrants = 0;
 
       const hexIds = grid.allCoords();
 
@@ -163,7 +163,7 @@
         if (bail) break;
 
         d.style(ctx, 'white', colWaypoint, 0);
-        d.drawShape(ctx, gridSize, half);
+        //d.drawShape(ctx, gridSize, half);
       }
 
       for (let i = 0; i < vagrants; i++) {
@@ -190,8 +190,7 @@
         if (bail) break;
 
         d.style(ctx, 'white', colVagrant, 0);
-        console.log(tri);
-        d.drawShape(ctx, gridSize, [tri]);
+        //d.drawShape(ctx, gridSize, [tri]);
       }
     }
   }
